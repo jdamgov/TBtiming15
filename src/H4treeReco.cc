@@ -37,6 +37,10 @@ H4treeReco::H4treeReco(TChain *tree,TString outUrl) :
   recoT_->Branch("maxch", &maxch_, "maxch/i");
   recoT_->Branch("group", group_,  "group[maxch]/F");
   recoT_->Branch("ch",    ch_,     "ch[maxch]/F");
+  recoT_->Branch("isample",    isample_,     "isample[1024]/I");
+  recoT_->Branch("wf0",    wf0_,     "wf0[1024]/F");
+  recoT_->Branch("wf3",    wf3_,     "wf3[1024]/F");
+  recoT_->Branch("wf4",    wf4_,     "wf4[1024]/F");
   recoT_->Branch("pedestal",    pedestal_,     "pedestal[maxch]/F");
   recoT_->Branch("wave_max",    wave_max_,     "wave_max[maxch]/F");
   recoT_->Branch("charge_integration",    charge_integration_,     "charge_integration[maxch]/F");
@@ -56,6 +60,9 @@ void H4treeReco::InitDigi()
   groupsAndChannels_.insert( std::pair<Int_t,Int_t>(0,4) ); //Si Pad #2
   groupsAndChannels_.insert( std::pair<Int_t,Int_t>(1,8) ); //Trigger
   
+// static index for interactive ploting
+  for(int i=0;i<1024;i++) isample_[i]=i;
+
   for(std::set< std::pair<Int_t,Int_t> >::iterator key=groupsAndChannels_.begin();
       key!=groupsAndChannels_.end();
       ++key)
@@ -72,6 +79,7 @@ void H4treeReco::InitDigi()
       varplots_[name]->SetName(name);
       varplots_[name]->doPlot   =false;
       varplots_[name]->SetGM(iGroup,iChannel);
+//      std::cout<<"iGroup,iChannel   "<<iGroup<<"   "<<iChannel<<std::endl;
 
     }
 }
@@ -79,6 +87,8 @@ void H4treeReco::InitDigi()
 //
 void H4treeReco::FillWaveforms()
 {
+	for (std::map<TString,VarPlot*>::iterator it=varplots_.begin();it!=varplots_.end();++it)
+	  if (it->second->waveform) it->second->waveform->clear();
 	
 	//fill waveforms
 	char name[100];
@@ -88,6 +98,9 @@ void H4treeReco::FillWaveforms()
 	  	if(groupsAndChannels_.find(key)==groupsAndChannels_.end()) continue;
 	        if(digiChannel[iSample]>=nActiveDigitizerChannels_) continue;
       		sprintf(name,"digi_ch%02d",key.first*8 +key.second);
+                if(key.first*8 +key.second==0) wf0_[digiSampleIndex[iSample]]=digiSampleValue[iSample];
+                if(key.first*8 +key.second==3) wf3_[digiSampleIndex[iSample]]=digiSampleValue[iSample];
+                if(key.first*8 +key.second==4) wf4_[digiSampleIndex[iSample]]=digiSampleValue[iSample];
 		//varplots_[name]->Fill2D(digiSampleIndex[iSample], digiSampleValue[iSample],1.);
 	    	varplots_[name]->waveform->addTimeAndSample(digiSampleIndex[iSample]*0.2,digiSampleValue[iSample]);
 	  }
@@ -121,12 +134,17 @@ void H4treeReco::FillWaveforms()
 				waveform->rescale(-1);
 		}
 		wave_max_[maxch_]=wave_max.max_amplitude;
+//                std::cout<<wave_max.max_amplitude<<std::endl;
 		
 
-		charge_integration_[maxch_] = waveform->charge_integrated(0,900);// pedestal already subtracted 
-		t_max_[maxch_]              = wave_max.time_at_max*1.e9;
-		t_max_frac30_[maxch_]       = waveform->time_at_frac(wave_max.time_at_max-1.3e-8,wave_max.time_at_max,0.3,wave_max,7)*1.e9;
-		t_max_frac50_[maxch_]       = waveform->time_at_frac(wave_max.time_at_max-1.3e-8,wave_max.time_at_max,0.5,wave_max,7)*1.e9;
+//		charge_integration_[maxch_] = waveform->charge_integrated(0,900);// pedestal already subtracted 
+		charge_integration_[maxch_] = waveform->charge_integrated(150,350);// pedestal already subtracted 
+		t_max_[maxch_]              = wave_max.time_at_max;
+		t_max_frac30_[maxch_]       = waveform->time_at_frac(wave_max.time_at_max-1.3e-8,wave_max.time_at_max,0.3,wave_max,7);
+		t_max_frac50_[maxch_]       = waveform->time_at_frac(wave_max.time_at_max-1.3e-8,wave_max.time_at_max,0.5,wave_max,7);
+		ch_[maxch_]=0;
+                if(it->first.Contains("digi_ch03"))ch_[maxch_]=3;
+                if(it->first.Contains("digi_ch04"))ch_[maxch_]=4;
 	}
 }
 
@@ -137,6 +155,7 @@ void H4treeReco::Loop()
   if (fChain == 0) return;
   
   Long64_t nentries = fChain->GetEntries();
+//  nentries = 2000;
   for (Long64_t jentry=0; jentry<nentries;jentry++) 
     {
       

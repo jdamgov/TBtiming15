@@ -34,6 +34,8 @@ class H4treeReco : public H4tree
 
   UInt_t nActiveDigitizerChannels_;
   UInt_t maxch_;
+  Int_t isample_[1024];
+  Float_t wf0_[1024],wf3_[1024],wf4_[1024];
   Float_t group_[100],ch_[100],pedestal_[100],wave_max_[100],charge_integration_[100],t_max_[100],t_max_frac30_[100],t_max_frac50_[100];
 
   TTree *recoT_;

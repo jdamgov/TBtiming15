@@ -1,12 +1,15 @@
 # FastTimeTestBeamAnalysis
 
+This code is a clone of https://github.com/PFCal-dev/FastTimeTestBeamAnalysis.git and it has been modified. 
+
+
 ## Installation
 
 The following is expected to work on any lxplus node.
 ```
 git init
 git clone https://github.com/cmsromadaq/H4DQM.git
-git clone https://github.com/PFCal-dev/FastTimeTestBeamAnalysis.git
+git clone https://github.com/jdamgov/TBtiming15.git
 cd FastTimeTestBeamAnalysis
 make
 ```
