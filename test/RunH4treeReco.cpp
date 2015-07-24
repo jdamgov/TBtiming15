@@ -14,10 +14,11 @@ using namespace std;
 int main(int argc, char* argv[])
 {
   //check arguments
-  if(argc<2)
+  if(argc<3)
     {
-      cout << argv[0] << " input [output=H4treeRecoOutput.root]" << endl
+      cout << argv[0] << " input cfg [output=H4treeRecoOutput.root]" << endl
 	   << "\t input - csv list of files (EOS or local)" << endl
+	   << "\t cfg - json file with the configuration for reco" << endl
 	   << "\t output - output file name (optional)" << endl;
       return 0;
     }
@@ -35,13 +36,18 @@ int main(int argc, char* argv[])
   cout << "Chain created with " << t->GetEntries() << " events in "
        << t->GetListOfFiles()->GetEntriesFast() << " files" << endl;
 
+  //configuration
+  TString cfgUrl(argv[2]);
+  cout << "Reconstruction will be configured from "<< cfgUrl << endl;
+
   //prepare output
   TString output="H4treeRecoOutput.root";
-  if(argc>2) output=argv[2];
+  if(argc>3) output=argv[3];
   cout << "Output will be stored in " << output << endl;
 
   //run reconstruction
-  H4treeReco reco(t,output);
+  JSONWrapper::Object cfg(cfgUrl.Data(), true);
+  H4treeReco reco(t,&cfg,output);
   reco.Loop();
   cout << "All done" << endl;
   
